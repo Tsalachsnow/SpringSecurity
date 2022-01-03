@@ -1,9 +1,9 @@
 package com.example.springsecurity1.security;
 
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,8 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-
-import static com.example.springsecurity1.security.ApplicationUserPermission.COURSE_WRITE;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;;
 import static com.example.springsecurity1.security.ApplicationUserRole.*;
 
 @Configuration
@@ -32,7 +31,9 @@ public class APPSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http    //.csrf().disable()
+        http    //.csrf().csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                //.and()
+                .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/", "index", "/css/*", "/js/*")
                 .permitAll()
@@ -45,13 +46,32 @@ public class APPSecurityConfig extends WebSecurityConfigurerAdapter {
                 .anyRequest()
                 .authenticated()
                 .and()
-                .httpBasic();
+                //.httpBasic();
+                .formLogin().loginPage("/login")
+                .permitAll()
+                .defaultSuccessUrl("/courses", true)
+                .passwordParameter("password")
+                .usernameParameter("username")
+                .and()
+                .rememberMe() //SessionId last only for 30 minutes of inactivity so a rememberMe() feature can be added
+                 // defaults to 2 weeks
+                 .tokenValiditySeconds((int) TimeUnit.DAYS.toSeconds(21))/*extending the default of remember me()
+                 session to anything you want*/
+                .key("somethingsecured").rememberMeParameter("remember-me")
+                .and()
+                .logout()//adding logout in spring security
+                .logoutUrl("/logout")
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout", "GET"))
+                .clearAuthentication(true)
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID", "remember-me")
+                .logoutSuccessUrl("/login");
     }
 
     @Override
     @Bean
     protected UserDetailsService userDetailsService() {
-               UserDetails AnnaSmithUser = User.builder()
+               UserDetails annasmithUser = User.builder()
                 .username("AnnaSmith")
                 .password(passwordEncoder.encode("password"))
                // .roles(STUDENT.name())//ROLE_STUDENT
@@ -72,7 +92,7 @@ public class APPSecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorities(ADMINTRAINEE.getGrantedAuthorities())
                 .build();
         return new InMemoryUserDetailsManager(
-                AnnaSmithUser,
+                annasmithUser,
                 lindaUser,
                 tomUser
         );
