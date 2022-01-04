@@ -1,9 +1,10 @@
 package com.example.springsecurity1.security;
 
 import com.example.springsecurity1.JWT.JWTUsernameAndPasswordAuthenticationFilter;
+import com.example.springsecurity1.JWT.JwtConfig;
 import com.example.springsecurity1.JWT.JwtTokenVerifier;
 import com.example.springsecurity1.auth.ApplicationUserService;
-import java.util.concurrent.TimeUnit;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,7 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;;
+;
 import static com.example.springsecurity1.security.ApplicationUserRole.*;
 
 @Configuration
@@ -26,11 +27,17 @@ public class APPSecurityConfig extends WebSecurityConfigurerAdapter {
 
     private final PasswordEncoder passwordEncoder;
     private final ApplicationUserService applicationUserService;
+    private final SecretKey secretKey;
+    private final JwtConfig jwtConfig;
 
     @Autowired
-    public APPSecurityConfig(PasswordEncoder passwordEncoder, ApplicationUserService applicationUserService) {
+    public APPSecurityConfig(PasswordEncoder passwordEncoder,
+                             ApplicationUserService applicationUserService,
+                             SecretKey secretKey, JwtConfig jwtConfig) {
         this.passwordEncoder = passwordEncoder;
         this.applicationUserService = applicationUserService;
+        this.secretKey = secretKey;
+        this.jwtConfig = jwtConfig;
     }
 
     @Override
@@ -41,8 +48,8 @@ public class APPSecurityConfig extends WebSecurityConfigurerAdapter {
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilter(new JWTUsernameAndPasswordAuthenticationFilter(authenticationManager()))
-                .addFilterAfter(new JwtTokenVerifier(), JWTUsernameAndPasswordAuthenticationFilter.class)
+                .addFilter(new JWTUsernameAndPasswordAuthenticationFilter(authenticationManager(), jwtConfig, secretKey))
+                .addFilterAfter(new JwtTokenVerifier(secretKey, jwtConfig), JWTUsernameAndPasswordAuthenticationFilter.class)
                 .authorizeRequests()
                 .antMatchers("/", "index", "/css/*", "/js/*")
                 .permitAll()
