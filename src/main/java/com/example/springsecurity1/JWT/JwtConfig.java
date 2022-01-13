@@ -4,7 +4,9 @@ package com.example.springsecurity1.JWT;
 import com.google.common.net.HttpHeaders;
 import io.jsonwebtoken.security.Keys;
 import javax.crypto.SecretKey;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.*;
+import org.springframework.context.annotation.Bean;
+
 
 
 @ConfigurationProperties(prefix = "application.jwt")
@@ -12,6 +14,7 @@ public class JwtConfig {
     private String secretKey;
     private String tokenPrefix;
     private Integer tokenExpirationAfterDays;
+
 
     public JwtConfig(String secretKey, String tokenPrefix, Integer tokenExpirationAfterDays) {
         this.secretKey = secretKey;
